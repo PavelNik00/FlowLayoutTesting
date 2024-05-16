@@ -43,6 +43,7 @@
 		E954154B2BF68E3200562193 = {
 			isa = PBXGroup;
 			children = (
+				E954156F2BF69EBE00562193 /* README.md */,
 				E95415562BF68E3200562193 /* FlowLayoutTrsting */,
 				E95415552BF68E3200562193 /* Products */,
 			);
@@ -59,7 +60,6 @@
 		E95415562BF68E3200562193 /* FlowLayoutTrsting */ = {
 			isa = PBXGroup;
 			children = (
-				E954156F2BF69EBE00562193 /* README.md */,
 				E95415572BF68E3200562193 /* AppDelegate.swift */,
 				E95415592BF68E3200562193 /* SceneDelegate.swift */,
 				E954155B2BF68E3200562193 /* SupplementaryCollectionViewController.swift */,
