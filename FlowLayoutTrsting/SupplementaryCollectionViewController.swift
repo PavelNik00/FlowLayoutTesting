@@ -11,20 +11,15 @@ import UIKit
 // он же является `UICollectionViewDataSource`, поставщиком данных для коллекции:
 final class SupplementaryCollectionViewController: UIViewController {
     
-    private let colors: [UIColor] = [
-        .black, .blue, .brown,
-        .cyan, .green, .orange,
-        .red, .purple, .yellow
-    ]
+    // Теперь свойство модифицируемо — оно будет хранить добавленные цвета.
+    private var colors = [UIColor]()
     
     // Объявляем приватное свойство в классе SupplementaryCollection
     private let params: GeometricParams
-    private let count: Int
     private var collectionView: UICollectionView!
     
     // Добавляем в конструктор параметр params
-    init(count: Int, using params: GeometricParams) {
-        self.count = count
+    init(using params: GeometricParams) {
         self.params = params
         super.init(nibName: nil, bundle: nil)
     }
@@ -37,72 +32,119 @@ final class SupplementaryCollectionViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        // Размеры для коллекции:
-        let size = CGRect(origin: CGPoint(x: 0, y: 0), size: CGSize(width: 600, height: 600))
-        
         // Указываем, какой Layout хотим использовать:
         let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .horizontal
+        layout.scrollDirection = .vertical
         
         // Создаем коллекцию с размером, равным размеру представления контроллера
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
-        collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight] // Добавляем autoresizing mask
-        
-        // используем size для установки определенного размера нашей коллекции
-        // collectionView = UICollectionView(frame: size, collectionViewLayout: layout)
+        collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.register(ColorCell.self, forCellWithReuseIdentifier: ColorCell.identifier)
-        collectionView.backgroundColor = .black
+        collectionView.backgroundColor = .white
         collectionView.dataSource = self
         collectionView.delegate = self
         
         view.addSubview(collectionView)
-        collectionView.center = view.center // Центрируем коллекцию на экране
+        
+        // Создадим стандартную кнопку с экшеном.
+        let addButton = UIButton(type: .roundedRect, primaryAction: UIAction(title: "Add color", handler: { [weak self] _ in
+            // Массив доступных цветов
+            let availableColors: [UIColor] = [.black, .blue, .brown, .cyan, .green, .orange, .red, .purple, .yellow]
+            // Произвольно выберем два цвета из массива
+            let selectedColors = (0..<2).map { _ in availableColors[Int.random(in: 0..<availableColors.count)] }
+            // Добавим выбранные цвета в коллекцию
+            self?.add(colors: selectedColors)
+        }))
+        
+        addButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(addButton)
+        
+        NSLayoutConstraint.activate([
+            addButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            addButton.heightAnchor.constraint(equalToConstant: 30),
+            addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+    }
+    
+    // метод для обновления свойств и анимации перерисовки коллекции
+    func add(colors values: [UIColor]) {
+        guard !values.isEmpty else { return }
+        
+        let count = colors.count
+        colors += values
+        
+        collectionView.performBatchUpdates {
+            let indexes = (count..<colors.count).map { IndexPath(row: $0, section: 0) }
+            collectionView.insertItems(at: indexes)
+        }
     }
 }
 
 // MARK: - UICollectionViewDataSource
 extension SupplementaryCollectionViewController: UICollectionViewDataSource {
-    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return count
+        return colors.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ColorCell.identifier, for: indexPath) as? ColorCell else {
             return UICollectionViewCell()
         }
-        cell.contentView.backgroundColor = colors[Int.random(in: 0..<colors.count)]
+        cell.contentView.backgroundColor = colors[indexPath.row]
         return cell
     }
 }
 
 // MARK: - UICollectionViewDelegateFlowLayout
 extension SupplementaryCollectionViewController: UICollectionViewDelegateFlowLayout {
-    
-    // метод для настройки размера ячейки
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let availableWidth = collectionView.frame.width - params.paddingWidth
         let cellWidth = availableWidth / CGFloat(params.cellCount)
-        let height: CGFloat = indexPath.row % 6 < 2 ? 2 / 3 : 1 / 3
-        return CGSize(width: cellWidth,
-                      height: cellWidth * height)
+        return CGSize(width: cellWidth, height: cellWidth * 2/3)
     }
     
-    // метод для настройки отступов
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 10,
-                            left: params.leftInset,
-                            bottom: 10,
-                            right: params.rightInset)
+        return UIEdgeInsets(top: 10, left: params.leftInset, bottom: 10, right: params.rightInset)
     }
     
-    // метод для параметров вертикального отступа между ячейками
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 10
     }
     
-    // метод для параметров горизонтального отступа между ячейками
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return params.cellSpacing
     }
+    
+    // метод для удаления ячеек при тапе на них
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+
+        // Удаляем из массива элемент с индексом
+//        colors.remove(at: indexPath.row)
+//            
+//        collectionView.performBatchUpdates {
+//            collectionView.deleteItems(at: [indexPath])
+//        }
+        
+        // Сохраняем выбранный цвет.
+        let color = colors[indexPath.row]
+        // Создаём массив, записываем туда индексы массива, в которых содержится такой же цвет.
+        var indexes: [Int] = []
+        
+        // Нам нужно получить индексы элементов, поэтому пройдёмся по индексированному списку.
+        colors.enumerated().forEach { index, element in
+            if element == color { indexes.append(index) }
+        }
+        
+        // Удалим из массива colors все элементы под индексами, начиная с последнего.
+        // В противном случае, при удалении с начала массива индексы будут смещаться и указывать на некорректные значения.
+        indexes.reversed().forEach { colors.remove(at: $0) }
+        
+        // Выполним анимированное удаление из коллекции.
+        collectionView.performBatchUpdates {
+            let indexPaths = indexes.map { IndexPath(row: $0, section: 0) }
+            collectionView.deleteItems(at: indexPaths)
+        }
+    }
 }
+

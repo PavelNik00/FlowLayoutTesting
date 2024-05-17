@@ -13,17 +13,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        window = UIWindow(frame: UIScreen.main.bounds)
-        
-        // Размеры для коллекции:
-        let params = GeometricParams(cellCount: 2,
-                                     leftInset: 10,
-                                     rightInset: 10,
-                                     cellSpacing: 10)
-        
-        let viewController = SupplementaryCollectionViewController(count: 31, using: params)
-        window?.rootViewController = UINavigationController(rootViewController: viewController)
-        window?.makeKeyAndVisible()
         return true
     }
 
